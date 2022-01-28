@@ -1,5 +1,6 @@
 package edu.byu.cs.tweeter.client.presenter;
 
+import android.content.Intent;
 import android.os.Handler;
 import android.os.Message;
 import android.widget.TextView;
@@ -16,6 +17,7 @@ import edu.byu.cs.tweeter.client.model.service.FollowService;
 import edu.byu.cs.tweeter.client.model.service.UserService;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetFollowingTask;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetUserTask;
+import edu.byu.cs.tweeter.client.view.main.MainActivity;
 import edu.byu.cs.tweeter.client.view.main.following.FollowingFragment;
 import edu.byu.cs.tweeter.model.domain.User;
 
@@ -27,6 +29,7 @@ public class FollowingPresenter {
         void displayMessage(String message);
         void setLoadingStatus(boolean value);
         void addFollowees(List<User> followees);
+        void addUser(User user);
     }
 
     private View view;
@@ -104,16 +107,24 @@ public class FollowingPresenter {
     }
 
     public void onClick(String userAliasStr) {
-        new FollowingFragment.FollowingHolder.GetUserHandler()
-        userService.getUser(Cache.getInstance().getCurrUserAuthToken(), userAliasStr, new GetFollowingObserver());
-        GetUserTask getUserTask = new GetUserTask(Cache.getInstance().getCurrUserAuthToken(),
-                userAliasStr, new FollowingFragment.FollowingHolder.GetUserHandler());
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.execute(getUserTask);
-        Toast.makeText(getContext(), "Getting user's profile...", Toast.LENGTH_LONG).show();
+        userService.getUser(Cache.getInstance().getCurrUserAuthToken(), userAliasStr, new GetUserObserver());
     }
 
     public class GetUserObserver implements UserService.GetUserObserver {
 
+        @Override
+        public void handleSuccess(User user) {
+            view.addUser(user);
+        }
+
+        @Override
+        public void handleFailure(String message) {
+            view.displayMessage("Failed to get user's profile: " + message);
+        }
+
+        @Override
+        public void handleException(Exception ex) {
+            view.displayMessage("Failed to get user's profile because of exception: " + ex.getMessage());
+        }
     }
 }

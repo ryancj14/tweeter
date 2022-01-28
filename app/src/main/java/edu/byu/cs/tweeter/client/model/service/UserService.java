@@ -13,6 +13,7 @@ import java.util.concurrent.Executors;
 
 import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetUserTask;
+import edu.byu.cs.tweeter.client.presenter.FollowingPresenter;
 import edu.byu.cs.tweeter.client.view.main.MainActivity;
 import edu.byu.cs.tweeter.client.view.main.following.FollowingFragment;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
@@ -21,12 +22,14 @@ import edu.byu.cs.tweeter.model.domain.User;
 public class UserService {
 
     public interface GetUserObserver {
-
+        void handleSuccess(User user);
+        void handleFailure(String message);
+        void handleException(Exception ex);
     }
 
-    public void getUser(AuthToken currUserAuthToken, String userAliasStr, FollowingFragment.FollowingHolder.GetUserHandler userHandler) {
+    public void getUser(AuthToken currUserAuthToken, String userAliasStr, FollowingPresenter.GetUserObserver getUserObserver) {
         GetUserTask getUserTask = new GetUserTask(currUserAuthToken,
-                userAliasStr, userHandler);
+                userAliasStr, new GetUserHandler(getUserObserver));
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(getUserTask);
     }
@@ -35,21 +38,28 @@ public class UserService {
      * Message handler (i.e., observer) for GetUserTask.
      */
     private class GetUserHandler extends Handler {
+
+        private UserService.GetUserObserver observer;
+
+        private GetUserHandler(UserService.GetUserObserver observer) {
+            this.observer = observer;
+        }
+
         @Override
         public void handleMessage(@NonNull Message msg) {
             boolean success = msg.getData().getBoolean(GetUserTask.SUCCESS_KEY);
             if (success) {
                 User user = (User) msg.getData().getSerializable(GetUserTask.USER_KEY);
 
-                Intent intent = new Intent(getContext(), MainActivity.class);
-                intent.putExtra(MainActivity.CURRENT_USER_KEY, user);
-                startActivity(intent);
+                observer.handleSuccess(user);
             } else if (msg.getData().containsKey(GetUserTask.MESSAGE_KEY)) {
                 String message = msg.getData().getString(GetUserTask.MESSAGE_KEY);
-                Toast.makeText(getContext(), "Failed to get user's profile: " + message, Toast.LENGTH_LONG).show();
+
+                observer.handleFailure(message);
             } else if (msg.getData().containsKey(GetUserTask.EXCEPTION_KEY)) {
                 Exception ex = (Exception) msg.getData().getSerializable(GetUserTask.EXCEPTION_KEY);
-                Toast.makeText(getContext(), "Failed to get user's profile because of exception: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+
+                observer.handleException(ex);
             }
         }
     }
