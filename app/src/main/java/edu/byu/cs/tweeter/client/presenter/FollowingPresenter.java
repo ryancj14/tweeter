@@ -1,24 +1,10 @@
 package edu.byu.cs.tweeter.client.presenter;
 
-import android.content.Intent;
-import android.os.Handler;
-import android.os.Message;
-import android.widget.TextView;
-import android.widget.Toast;
-
-import androidx.annotation.NonNull;
-
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.model.service.FollowService;
 import edu.byu.cs.tweeter.client.model.service.UserService;
-import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetFollowingTask;
-import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetUserTask;
-import edu.byu.cs.tweeter.client.view.main.MainActivity;
-import edu.byu.cs.tweeter.client.view.main.following.FollowingFragment;
 import edu.byu.cs.tweeter.model.domain.User;
 
 public class FollowingPresenter {
@@ -45,14 +31,6 @@ public class FollowingPresenter {
         this.view = view;
     }
 
-    public User getLastFollowee() {
-        return lastFollowee;
-    }
-
-    public void setLastFollowee(User lastFollowee) {
-        this.lastFollowee = lastFollowee;
-    }
-
     public boolean hasMorePages() {
         return hasMorePages;
     }
@@ -63,10 +41,6 @@ public class FollowingPresenter {
 
     public boolean isLoading() {
         return isLoading;
-    }
-
-    public void setLoading(boolean loading) {
-        isLoading = loading;
     }
 
     public void loadMoreItems(User user) {

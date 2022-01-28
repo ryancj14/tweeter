@@ -13,6 +13,7 @@ import java.util.concurrent.Executors;
 
 import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetUserTask;
+import edu.byu.cs.tweeter.client.presenter.FollowersPresenter;
 import edu.byu.cs.tweeter.client.presenter.FollowingPresenter;
 import edu.byu.cs.tweeter.client.view.main.MainActivity;
 import edu.byu.cs.tweeter.client.view.main.following.FollowingFragment;
@@ -28,6 +29,13 @@ public class UserService {
     }
 
     public void getUser(AuthToken currUserAuthToken, String userAliasStr, FollowingPresenter.GetUserObserver getUserObserver) {
+        GetUserTask getUserTask = new GetUserTask(currUserAuthToken,
+                userAliasStr, new GetUserHandler(getUserObserver));
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(getUserTask);
+    }
+
+    public void getUser(AuthToken currUserAuthToken, String userAliasStr, FollowersPresenter.GetUserObserver getUserObserver) {
         GetUserTask getUserTask = new GetUserTask(currUserAuthToken,
                 userAliasStr, new GetUserHandler(getUserObserver));
         ExecutorService executor = Executors.newSingleThreadExecutor();
