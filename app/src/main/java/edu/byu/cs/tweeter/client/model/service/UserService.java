@@ -1,7 +1,9 @@
 package edu.byu.cs.tweeter.client.model.service;
 
 import android.content.Intent;
+import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.widget.Toast;
 
@@ -13,6 +15,7 @@ import java.util.concurrent.Executors;
 
 import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetUserTask;
+import edu.byu.cs.tweeter.client.model.service.backgroundTask.LoginTask;
 import edu.byu.cs.tweeter.client.presenter.FollowersPresenter;
 import edu.byu.cs.tweeter.client.presenter.FollowingPresenter;
 import edu.byu.cs.tweeter.client.view.main.MainActivity;
@@ -71,4 +74,63 @@ public class UserService {
             }
         }
     }
+
+    /**
+     * An observer interface to be implemented by observers who want to be notified when
+     * asynchronous operations complete.
+     */
+    public interface LoginObserver {
+        void handleSuccess(User user, AuthToken authToken);
+        void handleFailure(String message);
+        void handleException(Exception exception);
+    }
+
+    /**
+     * Makes an asynchronous login request.
+     *
+     * @param username the user's name.
+     * @param password the user's password.
+     */
+    public void login(String username, String password, LoginObserver observer) {
+        LoginTask loginTask = getLoginTask(username, password, observer);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(loginTask);
+    }
+
+    LoginTask getLoginTask(String username, String password, LoginObserver observer) {
+        return new LoginTask(username, password, new LoginHandler(observer));
+    }
+
+
+    /**
+     * Handles messages from the background task indicating that the task is done, by invoking
+     * methods on the observer.
+     */
+    private static class LoginHandler extends Handler {
+
+        private final LoginObserver observer;
+
+        LoginHandler(LoginObserver observer) {
+            super(Looper.getMainLooper());
+            this.observer = observer;
+        }
+
+        @Override
+        public void handleMessage(Message message) {
+            Bundle bundle = message.getData();
+            boolean success = bundle.getBoolean(LoginTask.SUCCESS_KEY);
+            if (success) {
+                User user = (User) bundle.getSerializable(LoginTask.USER_KEY);
+                AuthToken authToken = (AuthToken) bundle.getSerializable(LoginTask.AUTH_TOKEN_KEY);
+                observer.handleSuccess(user, authToken);
+            } else if (bundle.containsKey(LoginTask.MESSAGE_KEY)) {
+                String errorMessage = bundle.getString(LoginTask.MESSAGE_KEY);
+                observer.handleFailure(errorMessage);
+            } else if (bundle.containsKey(LoginTask.EXCEPTION_KEY)) {
+                Exception ex = (Exception) bundle.getSerializable(LoginTask.EXCEPTION_KEY);
+                observer.handleException(ex);
+            }
+        }
+    }
+
 }
