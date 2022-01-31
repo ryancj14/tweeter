@@ -322,7 +322,7 @@ public class FollowingFragment extends Fragment implements FollowingPresenter.Vi
                     // Run this code later on the UI thread
                     final Handler handler = new Handler(Looper.getMainLooper());
                     handler.postDelayed(() -> {
-                        followingRecyclerViewAdapter.loadMoreItems();
+                        presenter.loadMoreItems(user);
                     }, 0);
                 }
             }

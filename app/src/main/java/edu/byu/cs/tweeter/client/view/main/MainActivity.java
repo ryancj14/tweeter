@@ -89,6 +89,8 @@ public class MainActivity extends AppCompatActivity implements StatusDialogFragm
             }
         });
 
+        presenter = new MainPresenter(this);
+
         updateSelectedUserFollowingAndFollowers();
 
         TextView userName = findViewById(R.id.userName);
@@ -160,6 +162,7 @@ public class MainActivity extends AppCompatActivity implements StatusDialogFragm
         //Clear everything so that the main activity is recreated with the login page.
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         //Clear user data (cached data).
+        //Move to Presenter
         Cache.getInstance().clearCache();
         startActivity(intent);
     }

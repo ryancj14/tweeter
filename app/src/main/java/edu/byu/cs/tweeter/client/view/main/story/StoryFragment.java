@@ -37,6 +37,7 @@ import edu.byu.cs.client.R;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetStoryTask;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetUserTask;
 import edu.byu.cs.tweeter.client.cache.Cache;
+import edu.byu.cs.tweeter.client.presenter.FeedPresenter;
 import edu.byu.cs.tweeter.client.presenter.FollowingPresenter;
 import edu.byu.cs.tweeter.client.presenter.StoryPresenter;
 import edu.byu.cs.tweeter.client.view.main.MainActivity;
@@ -93,6 +94,9 @@ public class StoryFragment extends Fragment implements StoryPresenter.View {
         storyRecyclerView.setAdapter(storyRecyclerViewAdapter);
 
         storyRecyclerView.addOnScrollListener(new StoryRecyclerViewPaginationScrollListener(layoutManager));
+
+        presenter = new StoryPresenter(this);
+        presenter.loadMoreItems(user);
 
         return view;
     }
@@ -225,7 +229,6 @@ public class StoryFragment extends Fragment implements StoryPresenter.View {
          * Creates an instance and loads the first page of story data.
          */
         StoryRecyclerViewAdapter() {
-            loadMoreItems();
         }
 
         /**
@@ -394,7 +397,7 @@ public class StoryFragment extends Fragment implements StoryPresenter.View {
                     // Run this code later on the UI thread
                     final Handler handler = new Handler(Looper.getMainLooper());
                     handler.postDelayed(() -> {
-                            storyRecyclerViewAdapter.loadMoreItems();
+                        presenter.loadMoreItems(user);
                     }, 0);
                 }
             }

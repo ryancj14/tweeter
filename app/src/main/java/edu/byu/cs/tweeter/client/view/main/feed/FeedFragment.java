@@ -94,6 +94,9 @@ public class FeedFragment extends Fragment implements FeedPresenter.View {
 
         feedRecyclerView.addOnScrollListener(new FeedRecyclerViewPaginationScrollListener(layoutManager));
 
+        presenter = new FeedPresenter(this);
+        presenter.loadMoreItems(user);
+
         return view;
     }
 
@@ -225,7 +228,6 @@ public class FeedFragment extends Fragment implements FeedPresenter.View {
          * Creates an instance and loads the first page of feed data.
          */
         FeedRecyclerViewAdapter() {
-            loadMoreItems();
         }
 
         /**
@@ -394,8 +396,8 @@ public class FeedFragment extends Fragment implements FeedPresenter.View {
                     // Run this code later on the UI thread
                     final Handler handler = new Handler(Looper.getMainLooper());
                     handler.postDelayed(() -> {
-                            feedRecyclerViewAdapter.loadMoreItems();
-                    }, 0);
+                        presenter.loadMoreItems(user);
+                        }, 0);
                 }
             }
         }

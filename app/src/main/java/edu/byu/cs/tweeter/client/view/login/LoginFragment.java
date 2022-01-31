@@ -1,5 +1,6 @@
         package edu.byu.cs.tweeter.client.view.login;
 
+        import android.content.Intent;
         import android.os.Bundle;
         import android.view.LayoutInflater;
         import android.view.View;
@@ -12,7 +13,9 @@
         import androidx.fragment.app.Fragment;
 
         import edu.byu.cs.client.R;
+        import edu.byu.cs.tweeter.client.cache.Cache;
         import edu.byu.cs.tweeter.client.presenter.LoginPresenter;
+        import edu.byu.cs.tweeter.client.view.main.MainActivity;
         import edu.byu.cs.tweeter.model.domain.AuthToken;
         import edu.byu.cs.tweeter.model.domain.User;
 
@@ -57,7 +60,13 @@ public class LoginFragment extends Fragment implements LoginPresenter.View {
 
     @Override
     public void loginSuccessful(User user, AuthToken authToken) {
+        Intent intent = new Intent(getContext(), MainActivity.class);
+        intent.putExtra(MainActivity.CURRENT_USER_KEY, user);
+        
+        loginInToast.cancel();
 
+        Toast.makeText(getContext(), "Hello " + user.getName(), Toast.LENGTH_LONG).show();
+        startActivity(intent);
     }
 
     @Override
