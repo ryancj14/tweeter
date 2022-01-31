@@ -23,12 +23,13 @@ public class FollowingPresenter {
     private UserService userService;
 
     private User lastFollowee;
-
     private boolean hasMorePages;
     private boolean isLoading = false;
 
     public FollowingPresenter(View view) {
         this.view = view;
+        this.followService = new FollowService();
+        this.userService = new UserService();
     }
 
     public boolean hasMorePages() {
@@ -80,6 +81,8 @@ public class FollowingPresenter {
         }
     }
 
+
+    //GetUser
     public void onClick(String userAliasStr) {
         userService.getUser(Cache.getInstance().getCurrUserAuthToken(), userAliasStr, new GetUserObserver());
     }

@@ -4,31 +4,33 @@ import java.util.List;
 
 import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.model.service.FollowService;
+import edu.byu.cs.tweeter.client.model.service.StatusService;
 import edu.byu.cs.tweeter.client.model.service.UserService;
+import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 
-public class FollowersPresenter {
+public class StoryPresenter {
 
     private static final int PAGE_SIZE = 10;
 
     public interface View {
-        void displayMessage(String message);
-        void setLoadingStatus(boolean value);
-        void addFollowers(List<User> followers);
+        void addStory(List<Status> story);
+        void setLoadingStatus(boolean b);
+        void displayMessage(String s);
         void addUser(User user);
     }
 
     private View view;
-    private FollowService followService;
+    private StatusService statusService;
     private UserService userService;
 
-    private User lastFollower;
+    private Status lastStatus;
     private boolean hasMorePages;
     private boolean isLoading = false;
 
-    public FollowersPresenter(View view) {
+    public StoryPresenter(StoryPresenter.View view) {
         this.view = view;
-        this.followService = new FollowService();
+        this.statusService = new StatusService();
         this.userService = new UserService();
     }
 
@@ -48,20 +50,20 @@ public class FollowersPresenter {
         if (!isLoading) {   // This guard is important for avoiding a race condition in the scrolling code.
             isLoading = true;
             view.setLoadingStatus(true);
-            followService.getFollowers(Cache.getInstance().getCurrUserAuthToken(), user, PAGE_SIZE, lastFollower, new GetFollowersObserver());
+            statusService.getStory(Cache.getInstance().getCurrUserAuthToken(), user, PAGE_SIZE, lastStatus, new StoryPresenter.GetStoryObserver());
         }
     }
 
-    public class GetFollowersObserver implements FollowService.GetFollowersObserver {
+    public class GetStoryObserver implements StatusService.GetStoryObserver {
 
         @Override
-        public void handleSuccess(List<User> followers, boolean hasMorePages) {
+        public void handleSuccess(List<Status> story, boolean hasMorePages) {
             isLoading = false;
             view.setLoadingStatus(false);
 
-            lastFollower = (followers.size() > 0) ? followers.get(followers.size() - 1) : null;
+            lastStatus = (story.size() > 0) ? story.get(story.size() - 1) : null;
             setHasMorePages(hasMorePages);
-            view.addFollowers(followers);
+            view.addStory(story);
         }
 
         @Override
@@ -69,7 +71,7 @@ public class FollowersPresenter {
             isLoading = false;
             view.setLoadingStatus(false);
 
-            view.displayMessage("Failed to get followers: " + message);
+            view.displayMessage("Failed to get story: " + message);
         }
 
         @Override
@@ -77,12 +79,13 @@ public class FollowersPresenter {
             isLoading = false;
             view.setLoadingStatus(false);
 
-            view.displayMessage("Failed to get followers because of exception: " + ex.getMessage());
+            view.displayMessage("Failed to get story because of exception: " + ex.getMessage());
         }
     }
 
+    //GetUser
     public void onClick(String userAliasStr) {
-        userService.getUser(Cache.getInstance().getCurrUserAuthToken(), userAliasStr, new GetUserObserver());
+        userService.getUser(Cache.getInstance().getCurrUserAuthToken(), userAliasStr, new StoryPresenter.GetUserObserver());
     }
 
     public class GetUserObserver implements UserService.GetUserObserver {

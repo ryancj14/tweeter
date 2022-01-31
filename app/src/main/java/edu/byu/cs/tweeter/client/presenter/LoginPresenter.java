@@ -1,9 +1,15 @@
 package edu.byu.cs.tweeter.client.presenter;
 
+import android.text.Editable;
 import android.util.Log;
+import android.widget.Toast;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.model.service.UserService;
+import edu.byu.cs.tweeter.client.model.service.backgroundTask.LoginTask;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
 
@@ -14,38 +20,31 @@ public class LoginPresenter implements UserService.LoginObserver {
 
     private static final String LOG_TAG = "LoginPresenter";
 
-    private final View view;
+    private final LoginPresenter.View view;
 
-    /**
-     * The interface by which this presenter communicates with it's view.
-     */
+    private UserService userService;
+
+    public LoginPresenter(View view) {
+        this.view = view;
+        userService = new UserService();
+    }
+
     public interface View {
         void loginSuccessful(User user, AuthToken authToken);
         void loginUnsuccessful(String message);
+        void informLoginReady();
     }
 
-    /**
-     * Creates an instance.
-     *
-     * @param view the view for which this class is the presenter.
-     */
-    public LoginPresenter(View view) {
-        // An assertion would be better, but Android doesn't support Java assertions
-        if(view == null) {
-            throw new NullPointerException();
+    public void onClick(String aliasStr, String passwordStr) {
+        try {
+            validateLogin(aliasStr);
+            view.informLoginReady();
+
+            // Send the login request.
+            userService.login(aliasStr, passwordStr, this);
+        } catch (Exception e) {
+            view.loginUnsuccessful(e.getMessage());
         }
-        this.view = view;
-    }
-
-    /**
-     * Initiates the login process.
-     *
-     * @param username the user's username.
-     * @param password the user's password.
-     */
-    public void initiateLogin(String username, String password) {
-        UserService userService = new UserService();
-        userService.login(username, password, this);
     }
 
     /**
@@ -88,5 +87,17 @@ public class LoginPresenter implements UserService.LoginObserver {
         String errorMessage = "Failed to login because of exception: " + exception.getMessage();
         Log.e(LOG_TAG, errorMessage, exception);
         view.loginUnsuccessful(errorMessage);
+    }
+
+    public void validateLogin(String aliasStr) {
+        if (aliasStr.charAt(0) != '@') {
+            throw new IllegalArgumentException("Alias must begin with @.");
+        }
+        if (aliasStr.length() < 2) {
+            throw new IllegalArgumentException("Alias must contain 1 or more characters after the @.");
+        }
+        if (aliasStr.length() == 0) {
+            throw new IllegalArgumentException("Password cannot be empty.");
+        }
     }
 }
