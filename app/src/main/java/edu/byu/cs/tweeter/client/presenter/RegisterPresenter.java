@@ -1,39 +1,24 @@
 package edu.byu.cs.tweeter.client.presenter;
 
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Base64;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import edu.byu.cs.tweeter.client.cache.Cache;
-import edu.byu.cs.tweeter.client.model.service.FollowService;
 import edu.byu.cs.tweeter.client.model.service.UserService;
-import edu.byu.cs.tweeter.client.model.service.backgroundTask.RegisterTask;
-import edu.byu.cs.tweeter.client.view.login.RegisterFragment;
-import edu.byu.cs.tweeter.client.view.main.MainActivity;
+import edu.byu.cs.tweeter.client.model.service.observer.AuthenticateTaskObserver;
+import edu.byu.cs.tweeter.client.presenter.view.RegisterView;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
 
-public class RegisterPresenter {
-
-    private RegisterPresenter.View view;
+public class RegisterPresenter extends Presenter<RegisterView> {
 
     private UserService userService;
 
-    public interface View {
-        void notifyRegisterStart();
-        void notifyException(String message);
-        void RegisterSuccess(User registeredUser, String name);
-        void displayMessage(String s);
-    }
-
-    public RegisterPresenter(RegisterPresenter.View view) {
+    public RegisterPresenter(RegisterView view) {
         this.view = view;
         this.userService = new UserService();
     }
@@ -41,7 +26,7 @@ public class RegisterPresenter {
     public void startRegisterTask(String firstName, String lastName, String alias, String password, Drawable imageDrawable) {
         try {
             validateRegistration(firstName, lastName, alias, password, imageDrawable);
-            view.notifyRegisterStart();
+            view.informRegisterReady();
 
             // Convert image to byte array.
             Bitmap image = ((BitmapDrawable) imageDrawable).getBitmap();
@@ -84,14 +69,13 @@ public class RegisterPresenter {
         }
     }
 
-    public class RegisterObserver implements UserService.RegisterObserver {
+    public class RegisterObserver implements AuthenticateTaskObserver {
 
         @Override
         public void handleSuccess(User registeredUser, AuthToken authToken) {
             Cache.getInstance().setCurrUser(registeredUser);
             Cache.getInstance().setCurrUserAuthToken(authToken);
-
-            view.RegisterSuccess(registeredUser, Cache.getInstance().getCurrUser().getName());
+            view.registerSuccess(registeredUser, Cache.getInstance().getCurrUser().getName());
         }
 
         @Override

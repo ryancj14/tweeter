@@ -5,7 +5,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.Message;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextPaint;
@@ -30,16 +29,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import edu.byu.cs.client.R;
-import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetStoryTask;
-import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetUserTask;
-import edu.byu.cs.tweeter.client.cache.Cache;
-import edu.byu.cs.tweeter.client.presenter.FeedPresenter;
-import edu.byu.cs.tweeter.client.presenter.FollowingPresenter;
 import edu.byu.cs.tweeter.client.presenter.StoryPresenter;
+import edu.byu.cs.tweeter.client.presenter.view.PagedView;
 import edu.byu.cs.tweeter.client.view.main.MainActivity;
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
@@ -47,7 +40,7 @@ import edu.byu.cs.tweeter.model.domain.User;
 /**
  * Implements the "Story" tab.
  */
-public class StoryFragment extends Fragment implements StoryPresenter.View {
+public class StoryFragment extends Fragment implements PagedView<Status> {
     private static final String LOG_TAG = "StoryFragment";
     private static final String USER_KEY = "UserKey";
 
@@ -102,7 +95,7 @@ public class StoryFragment extends Fragment implements StoryPresenter.View {
     }
 
     @Override
-    public void addStory(List<Status> story) {
+    public void addItems(List<Status> story) {
         storyRecyclerViewAdapter.addItems(story);
     }
 
@@ -121,7 +114,7 @@ public class StoryFragment extends Fragment implements StoryPresenter.View {
     }
 
     @Override
-    public void addUser(User user) {
+    public void navigateToUser(User user) {
         Intent intent = new Intent(getContext(), MainActivity.class);
         intent.putExtra(MainActivity.CURRENT_USER_KEY, user);
         startActivity(intent);

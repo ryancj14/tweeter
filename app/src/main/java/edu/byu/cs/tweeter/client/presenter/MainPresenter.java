@@ -1,7 +1,6 @@
 package edu.byu.cs.tweeter.client.presenter;
 
 import android.util.Log;
-import android.widget.Toast;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -9,64 +8,45 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-import edu.byu.cs.client.R;
 import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.model.service.FollowService;
 import edu.byu.cs.tweeter.client.model.service.StatusService;
 import edu.byu.cs.tweeter.client.model.service.UserService;
-import edu.byu.cs.tweeter.client.model.service.backgroundTask.FollowTask;
-import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetFollowersCountTask;
-import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetFollowingCountTask;
-import edu.byu.cs.tweeter.client.model.service.backgroundTask.IsFollowerTask;
-import edu.byu.cs.tweeter.client.model.service.backgroundTask.LogoutTask;
-import edu.byu.cs.tweeter.client.model.service.backgroundTask.PostStatusTask;
-import edu.byu.cs.tweeter.client.model.service.backgroundTask.UnfollowTask;
-import edu.byu.cs.tweeter.client.view.main.MainActivity;
+import edu.byu.cs.tweeter.client.model.service.observer.GetCountObserver;
+import edu.byu.cs.tweeter.client.model.service.observer.SimpleTaskObserver;
+import edu.byu.cs.tweeter.client.presenter.view.MainView;
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 
-public class MainPresenter {
+public class MainPresenter extends Presenter<MainView> {
 
     private static final String LOG_TAG = "MainActivity";
 
-    public interface View {
-        void displayMessage(String message);
-
-        void logoutUser();
-
-        void closePostingToast();
-
-        void setFollowerCount(int count);
-
-        void setFolloweeCount(int count);
-
-        void updateFollowButton(boolean removed);
-
-        void updateSelectedUserFollowingAndFollowers();
-
-        void enableFollowButton();
-    }
-
-    private MainPresenter.View view;
     private FollowService followService;
     private UserService userService;
     private StatusService statusService;
 
-    public MainPresenter(MainPresenter.View view) {
+    public MainPresenter(MainView view) {
         this.view = view;
         this.followService = new FollowService();
         this.userService = new UserService();
-        this.statusService = new StatusService();
+    }
+
+    public StatusService getStatusService() {
+        if (userService == null) {
+            return new StatusService();
+        }
+        else {
+            return statusService;
+        }
     }
 
     public void logOut() {
         userService.logout(Cache.getInstance().getCurrUserAuthToken(), new LogoutObserver());
     }
 
-    public class LogoutObserver implements UserService.LogoutObserver {
+    public class LogoutObserver implements SimpleTaskObserver {
         @Override
         public void handleSuccess() {
             view.logoutUser();
@@ -88,7 +68,7 @@ public class MainPresenter {
                 selectedUser, new GetFollowersCountObserver(), new GetFollowingCountObserver());
     }
 
-    public class GetFollowersCountObserver implements FollowService.GetFollowersCountObserver {
+    public class GetFollowersCountObserver implements GetCountObserver {
 
         @Override
         public void handleSuccess(int count) {
@@ -106,7 +86,7 @@ public class MainPresenter {
         }
     }
 
-    public class GetFollowingCountObserver implements FollowService.GetFollowingCountObserver {
+    public class GetFollowingCountObserver implements GetCountObserver {
 
         @Override
         public void handleSuccess(int count) {
@@ -151,54 +131,54 @@ public class MainPresenter {
         followService.follow(Cache.getInstance().getCurrUserAuthToken(), selectedUser, new FollowObserver());
     }
 
-    public class FollowObserver implements FollowService.FollowObserver {
+    public class FollowObserver implements SimpleTaskObserver {
 
         @Override
         public void handleSuccess() {
             view.updateSelectedUserFollowingAndFollowers();
             view.updateFollowButton(false);
+            view.enableFollowButton();
         }
 
         @Override
         public void handleFailure(String message) {
             view.displayMessage("Failed to follow: " + message);
+            view.enableFollowButton();
         }
 
         @Override
         public void handleException(Exception ex) {
             view.displayMessage("Failed to follow because of exception: " + ex.getMessage());
-        }
-
-        @Override
-        public void setFollowEnabled() {
             view.enableFollowButton();
         }
+    }
+
+    public void setFollowEnabled() {
+        view.enableFollowButton();
     }
 
     public void unfollow(User selectedUser) {
         followService.unfollow(Cache.getInstance().getCurrUserAuthToken(), selectedUser, new UnfollowObserver());
     }
 
-    public class UnfollowObserver implements FollowService.UnfollowObserver {
+    public class UnfollowObserver implements SimpleTaskObserver {
 
         @Override
         public void handleSuccess() {
             view.updateSelectedUserFollowingAndFollowers();
             view.updateFollowButton(true);
+            view.enableFollowButton();
         }
 
         @Override
         public void handleFailure(String message) {
             view.displayMessage("Failed to unfollow: " + message);
+            view.enableFollowButton();
         }
 
         @Override
         public void handleException(Exception ex) {
             view.displayMessage("Failed to unfollow because of exception: " + ex.getMessage());
-        }
-
-        @Override
-        public void setFollowEnabled() {
             view.enableFollowButton();
         }
     }
@@ -206,6 +186,7 @@ public class MainPresenter {
     public void postStatus(String post) {
         try {
             Status newStatus = new Status(post, Cache.getInstance().getCurrUser(), getFormattedDateTime(), parseURLs(post), parseMentions(post));
+            statusService = getStatusService();
             statusService.postStatus(Cache.getInstance().getCurrUserAuthToken(), newStatus, new PostStatusObserver());
         } catch (Exception ex) {
             Log.e(LOG_TAG, ex.getMessage(), ex);
@@ -213,7 +194,7 @@ public class MainPresenter {
         }
     }
 
-    public class PostStatusObserver implements StatusService.PostStatusObserver {
+    public class PostStatusObserver implements SimpleTaskObserver {
 
         @Override
         public void handleSuccess() {

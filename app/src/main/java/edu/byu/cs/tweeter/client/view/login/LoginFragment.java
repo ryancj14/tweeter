@@ -13,8 +13,8 @@
         import androidx.fragment.app.Fragment;
 
         import edu.byu.cs.client.R;
-        import edu.byu.cs.tweeter.client.cache.Cache;
         import edu.byu.cs.tweeter.client.presenter.LoginPresenter;
+        import edu.byu.cs.tweeter.client.presenter.view.LoginView;
         import edu.byu.cs.tweeter.client.view.main.MainActivity;
         import edu.byu.cs.tweeter.model.domain.AuthToken;
         import edu.byu.cs.tweeter.model.domain.User;
@@ -22,7 +22,7 @@
 /**
  * Implements the login screen.
  */
-public class LoginFragment extends Fragment implements LoginPresenter.View {
+public class LoginFragment extends Fragment implements LoginView {
     //private static final String LOG_TAG = "LoginFragment";
 
     private Toast loginInToast;
@@ -59,7 +59,7 @@ public class LoginFragment extends Fragment implements LoginPresenter.View {
     }
 
     @Override
-    public void loginSuccessful(User user, AuthToken authToken) {
+    public void loginSuccess(User user, AuthToken authToken) {
         Intent intent = new Intent(getContext(), MainActivity.class);
         intent.putExtra(MainActivity.CURRENT_USER_KEY, user);
         
@@ -67,11 +67,6 @@ public class LoginFragment extends Fragment implements LoginPresenter.View {
 
         Toast.makeText(getContext(), "Hello " + user.getName(), Toast.LENGTH_LONG).show();
         startActivity(intent);
-    }
-
-    @Override
-    public void loginUnsuccessful(String message) {
-        errorView.setText(message);
     }
 
     @Override
@@ -83,4 +78,8 @@ public class LoginFragment extends Fragment implements LoginPresenter.View {
     }
 
 
+    @Override
+    public void displayMessage(String s) {
+        errorView.setText(s);
+    }
 }
