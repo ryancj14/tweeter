@@ -41,6 +41,8 @@ public class UserService extends Executes {
         execute(loginTask);
     }
 
+
+
     // LOGOUT
     // logout function (for login fragment)
     public void logout(AuthToken currUserAuthToken, SimpleTaskObserver logoutObserver) {

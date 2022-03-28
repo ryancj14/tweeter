@@ -30,10 +30,8 @@ public class FollowService extends Executes {
         execute(getFollowingTask);
     }
 
-    // GET FOLLOWERS: lines 68-112
-    // (GetFollowersObserver interface,
+    // GET FOLLOWERS
     //  getFollowers function (for FollowersFragment),
-    //  GetFollowersHandler class)ass
     public void getFollowers(AuthToken currUserAuthToken, User user, int pageSize, User lastFollower, PagedTaskObserver<User> getFollowersObserver) {
         GetFollowersTask getFollowersTask = new GetFollowersTask(currUserAuthToken, user, pageSize, lastFollower,
                 new PagedTaskHandler<>(getFollowersObserver));

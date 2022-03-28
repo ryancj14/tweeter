@@ -8,7 +8,6 @@ import edu.byu.cs.tweeter.client.model.service.observer.PagedTaskObserver;
 import edu.byu.cs.tweeter.client.model.service.observer.UserObserver;
 import edu.byu.cs.tweeter.client.presenter.view.PagedView;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
-import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 
 public abstract class PagedPresenter<T> extends Presenter<PagedView<T>> {
