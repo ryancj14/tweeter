@@ -34,7 +34,7 @@ public class MainPresenter extends Presenter<MainView> {
     }
 
     public StatusService getStatusService() {
-        if (userService == null) {
+        if (statusService == null) {
             return new StatusService();
         }
         else {

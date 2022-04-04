@@ -5,6 +5,7 @@ import edu.byu.cs.tweeter.client.model.service.backgroundTask.GetStoryTask;
 import edu.byu.cs.tweeter.client.model.service.backgroundTask.PostStatusTask;
 import edu.byu.cs.tweeter.client.model.service.handler.PagedTaskHandler;
 import edu.byu.cs.tweeter.client.model.service.handler.SimpleTaskHandler;
+import edu.byu.cs.tweeter.client.model.service.observer.PagedTaskObserver;
 import edu.byu.cs.tweeter.client.presenter.MainPresenter;
 import edu.byu.cs.tweeter.client.presenter.PagedPresenter;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
@@ -15,7 +16,7 @@ public class StatusService extends Executes {
 
     // GET STORY
     // GetStory function (for StoryFragment)
-    public void getStory(AuthToken currUserAuthToken, User user, int pageSize, Status lastStatus, PagedPresenter<Status>.PageObserver getStoryObserver) {
+    public void getStory(AuthToken currUserAuthToken, User user, int pageSize, Status lastStatus, PagedTaskObserver<Status> getStoryObserver) {
         GetStoryTask getStoryTask = new GetStoryTask(currUserAuthToken, user, pageSize, lastStatus,
                 new PagedTaskHandler<>(getStoryObserver));
         execute(getStoryTask);
@@ -23,7 +24,7 @@ public class StatusService extends Executes {
 
     // GET FEED
     // GetFeed function (for StoryFragment)
-    public void getFeed(AuthToken currUserAuthToken, User user, int pageSize, Status lastStatus, PagedPresenter<Status>.PageObserver getFeedObserver) {
+    public void getFeed(AuthToken currUserAuthToken, User user, int pageSize, Status lastStatus, PagedTaskObserver<Status> getFeedObserver) {
         GetFeedTask getFeedTask = new GetFeedTask(currUserAuthToken, user, pageSize, lastStatus,
                 new PagedTaskHandler<>(getFeedObserver));
         execute(getFeedTask);

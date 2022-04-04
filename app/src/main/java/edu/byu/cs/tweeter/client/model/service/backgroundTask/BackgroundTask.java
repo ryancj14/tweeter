@@ -90,7 +90,7 @@ public abstract class BackgroundTask implements Runnable {
     }
 
     private void sendMessage(Bundle msgBundle) {
-        Message msg = Message.obtain();
+        Message msg = new Message(); //Message.obtain();
         msg.setData(msgBundle);
         messageHandler.sendMessage(msg);
     }
