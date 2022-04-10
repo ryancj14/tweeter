@@ -8,11 +8,8 @@ import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.Projection;
-import com.amazonaws.services.dynamodbv2.model.ProjectionType;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
@@ -26,7 +23,7 @@ import java.util.Map;
 
 import edu.byu.cs.tweeter.model.domain.User;
 
-public class UserDAO {
+public class UserDAO implements UserDAOInterface {
 
     private static String hashPassword(String passwordToHash) {
         try {
@@ -53,15 +50,11 @@ public class UserDAO {
     private static final String ImageAttr = "image";
 
     // DynamoDB client
-    private static AmazonDynamoDB amazonDynamoDB = AmazonDynamoDBClientBuilder
+    private static final AmazonDynamoDB amazonDynamoDB = AmazonDynamoDBClientBuilder
             .standard()
             .withRegion("us-east-1")
             .build();
-    private static DynamoDB dynamoDB = new DynamoDB(amazonDynamoDB);
-
-    private static boolean isNonEmptyString(String value) {
-        return (value != null && value.length() > 0);
-    }
+    private static final DynamoDB dynamoDB = new DynamoDB(amazonDynamoDB);
 
     public void createTable() throws DataAccessException {
         try {
@@ -71,18 +64,18 @@ public class UserDAO {
             tableAttributeDefinitions.add(new AttributeDefinition()
                     .withAttributeName(UserAttr)
                     .withAttributeType("S"));
-            tableAttributeDefinitions.add(new AttributeDefinition()
-                    .withAttributeName(HashedPasswordAttr)
-                    .withAttributeType("S"));
-            tableAttributeDefinitions.add(new AttributeDefinition()
-                    .withAttributeName(FirstNameAttr)
-                    .withAttributeType("S"));
-            tableAttributeDefinitions.add(new AttributeDefinition()
-                    .withAttributeName(LastNameAttr)
-                    .withAttributeType("S"));
-            tableAttributeDefinitions.add(new AttributeDefinition()
-                    .withAttributeName(ImageAttr)
-                    .withAttributeType("S"));
+//            tableAttributeDefinitions.add(new AttributeDefinition()
+//                    .withAttributeName(HashedPasswordAttr)
+//                    .withAttributeType("S"));
+//            tableAttributeDefinitions.add(new AttributeDefinition()
+//                    .withAttributeName(FirstNameAttr)
+//                    .withAttributeType("S"));
+//            tableAttributeDefinitions.add(new AttributeDefinition()
+//                    .withAttributeName(LastNameAttr)
+//                    .withAttributeType("S"));
+//            tableAttributeDefinitions.add(new AttributeDefinition()
+//                    .withAttributeName(ImageAttr)
+//                    .withAttributeType("S"));
 
             // Table key schema
             ArrayList<KeySchemaElement> tableKeySchema = new ArrayList<>();
@@ -131,27 +124,20 @@ public class UserDAO {
         table.putItem(item);
     }
 
-    public void deleteUser(String userAlias) {
-        Table table = dynamoDB.getTable(TableName);
-
-        table.deleteItem(UserAttr, userAlias);
-    }
-
-    public boolean validPassword(String userAlias, String password) {
+    public boolean invalidPassword(String userAlias, String password) {
         Table table = dynamoDB.getTable(TableName);
 
         Item item = table.getItem(UserAttr, userAlias);
         if (item == null) {
             return false;
         } else {
-            return (hashPassword(password) == item.get(HashedPasswordAttr));
+            return !hashPassword(password).equals(item.get(HashedPasswordAttr));
         }
     }
 
     public User getUser(String userAlias) {
-        ResultsPage result = new ResultsPage();
 
-        Map<String, String> attrNames = new HashMap<String, String>();
+        Map<String, String> attrNames = new HashMap<>();
         attrNames.put("#vis", UserAttr);
 
         Map<String, AttributeValue> attrValues = new HashMap<>();

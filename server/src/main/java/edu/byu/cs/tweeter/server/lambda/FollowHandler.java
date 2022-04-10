@@ -5,6 +5,8 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 
 import edu.byu.cs.tweeter.model.net.request.FollowRequest;
 import edu.byu.cs.tweeter.model.net.response.FollowResponse;
+import edu.byu.cs.tweeter.server.dao.AuthTokenDAO;
+import edu.byu.cs.tweeter.server.dao.FollowDAO;
 import edu.byu.cs.tweeter.server.service.FollowService;
 
 /**
@@ -24,6 +26,6 @@ public class FollowHandler implements RequestHandler<FollowRequest, FollowRespon
     @Override
     public FollowResponse handleRequest(FollowRequest request, Context context) {
         FollowService service = new FollowService();
-        return service.follow(request);
+        return service.follow(request, new AuthTokenDAO(), new FollowDAO());
     }
 }

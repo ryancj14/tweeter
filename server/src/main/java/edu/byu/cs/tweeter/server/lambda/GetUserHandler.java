@@ -7,6 +7,8 @@ import edu.byu.cs.tweeter.model.net.request.LoginRequest;
 import edu.byu.cs.tweeter.model.net.request.UserRequest;
 import edu.byu.cs.tweeter.model.net.response.LoginResponse;
 import edu.byu.cs.tweeter.model.net.response.UserResponse;
+import edu.byu.cs.tweeter.server.dao.AuthTokenDAO;
+import edu.byu.cs.tweeter.server.dao.UserDAO;
 import edu.byu.cs.tweeter.server.service.UserService;
 
 /**
@@ -17,6 +19,6 @@ public class GetUserHandler implements RequestHandler<UserRequest, UserResponse>
     @Override
     public UserResponse handleRequest(UserRequest request, Context context) {
         UserService userService = new UserService();
-        return userService.getUser(request);
+        return userService.getUser(request, new AuthTokenDAO(), new UserDAO());
     }
 }

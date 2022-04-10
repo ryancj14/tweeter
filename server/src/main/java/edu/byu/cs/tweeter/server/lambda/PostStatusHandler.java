@@ -5,6 +5,10 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 
 import edu.byu.cs.tweeter.model.net.request.PostStatusRequest;
 import edu.byu.cs.tweeter.model.net.response.PostStatusResponse;
+import edu.byu.cs.tweeter.server.dao.AuthTokenDAO;
+import edu.byu.cs.tweeter.server.dao.FeedDAO;
+import edu.byu.cs.tweeter.server.dao.FollowDAO;
+import edu.byu.cs.tweeter.server.dao.StoryDAO;
 import edu.byu.cs.tweeter.server.service.StatusService;
 
 /**
@@ -15,6 +19,6 @@ public class PostStatusHandler implements RequestHandler<PostStatusRequest, Post
     @Override
     public PostStatusResponse handleRequest(PostStatusRequest request, Context context) {
         StatusService statusService = new StatusService();
-        return statusService.postStatus(request);
+        return statusService.postStatus(request, new AuthTokenDAO(), new StoryDAO(), new FollowDAO(), new FeedDAO());
     }
 }

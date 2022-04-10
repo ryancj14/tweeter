@@ -5,6 +5,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 
 import edu.byu.cs.tweeter.model.net.request.FollowersCountRequest;
 import edu.byu.cs.tweeter.model.net.response.FollowersCountResponse;
+import edu.byu.cs.tweeter.server.dao.FollowDAO;
 import edu.byu.cs.tweeter.server.service.FollowService;
 
 /**
@@ -24,6 +25,6 @@ public class GetFollowersCountHandler implements RequestHandler<FollowersCountRe
     @Override
     public FollowersCountResponse handleRequest(FollowersCountRequest request, Context context) {
         FollowService service = new FollowService();
-        return service.getFollowersCount(request);
+        return service.getFollowersCount(request, new FollowDAO());
     }
 }

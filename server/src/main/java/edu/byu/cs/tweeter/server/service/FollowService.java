@@ -20,29 +20,18 @@ import edu.byu.cs.tweeter.model.net.response.FollowingResponse;
 import edu.byu.cs.tweeter.model.net.response.IsFollowerResponse;
 import edu.byu.cs.tweeter.model.net.response.UnfollowResponse;
 import edu.byu.cs.tweeter.server.dao.AuthTokenDAO;
+import edu.byu.cs.tweeter.server.dao.AuthTokenDAOInterface;
 import edu.byu.cs.tweeter.server.dao.FollowDAO;
+import edu.byu.cs.tweeter.server.dao.FollowDAOInterface;
 import edu.byu.cs.tweeter.server.dao.UserDAO;
-import edu.byu.cs.tweeter.util.FakeData;
+import edu.byu.cs.tweeter.server.dao.UserDAOInterface;
 
 /**
  * Contains the business logic for getting the users a user is following.
  */
 public class FollowService {
 
-    private UserDAO getUserDAO() {
-        return new UserDAO();
-    }
-
-    private AuthTokenDAO getAuthTokenDAO() {
-        return new AuthTokenDAO();
-    }
-
-
-    FollowDAO getFollowDAO() {
-        return new FollowDAO();
-    }
-
-    public FollowingResponse getFollowees(FollowingRequest request) {
+    public FollowingResponse getFollowees(FollowingRequest request, FollowDAOInterface followTable, UserDAOInterface userTable) {
         String followerAlias = request.getFollowerAlias();
         int limit = request.getLimit();
         String lastFolloweeAlias = request.getLastFolloweeAlias();
@@ -52,12 +41,12 @@ public class FollowService {
             throw new RuntimeException("[BadRequest] Request needs to have a positive limit");
         }
 
-        List<String> allAliases = getFollowDAO().getFollowing(followerAlias);
+        List<String> allAliases = followTable.getFollowing(followerAlias);
         List<User> responseFollowees = new ArrayList<>(limit);
 
         List<User> allFollowees = new ArrayList<>();
         for (String alias : allAliases) {
-            allFollowees.add(getUserDAO().getUser(alias));
+            allFollowees.add(userTable.getUser(alias));
         }
 
         boolean hasMorePages = false;
@@ -75,7 +64,7 @@ public class FollowService {
         return new FollowingResponse(responseFollowees, hasMorePages);
     }
 
-    public FollowersResponse getFollowers(FollowersRequest request) {
+    public FollowersResponse getFollowers(FollowersRequest request, FollowDAOInterface followTable, UserDAOInterface userTable) {
         String followeeAlias = request.getFolloweeAlias();
         int limit = request.getLimit();
         String lastFollowerAlias = request.getLastFollowerAlias();
@@ -85,18 +74,18 @@ public class FollowService {
             throw new RuntimeException("[BadRequest] Request needs to have a positive limit");
         }
 
-        List<String> allAliases = getFollowDAO().getFollowers(followeeAlias);
+        List<String> allAliases = followTable.getFollowers(followeeAlias);
         List<User> responseFollowers = new ArrayList<>(limit);
 
         List<User> allFollowers = new ArrayList<>();
         for (String alias : allAliases) {
-            allFollowers.add(getUserDAO().getUser(alias));
+            allFollowers.add(userTable.getUser(alias));
         }
 
         boolean hasMorePages = false;
 
         if (!allFollowers.isEmpty()) {
-            int followeesIndex = getFolloweesStartingIndex(lastFollowerAlias, allFollowers);
+            int followeesIndex = getFollowersStartingIndex(lastFollowerAlias, allFollowers);
 
             for(int limitCounter = 0; followeesIndex < allFollowers.size() && limitCounter < limit; followeesIndex++, limitCounter++) {
                 responseFollowers.add(allFollowers.get(followeesIndex));
@@ -108,25 +97,25 @@ public class FollowService {
         return new FollowersResponse(responseFollowers, hasMorePages);
     }
 
-    public FollowingCountResponse getFollowingCount(FollowingCountRequest request) {
+    public FollowingCountResponse getFollowingCount(FollowingCountRequest request, FollowDAOInterface followTable) {
         String userAlias = request.getTargetUserAlias();
         if(userAlias == null) {
             throw new RuntimeException("[BadRequest] Request needs to have a user alias");
         }
-        int followingCount = getFollowDAO().getFollowingCount(userAlias);
+        int followingCount = followTable.getFollowingCount(userAlias);
         return new FollowingCountResponse(followingCount);
     }
 
-    public FollowersCountResponse getFollowersCount(FollowersCountRequest request) {
+    public FollowersCountResponse getFollowersCount(FollowersCountRequest request, FollowDAOInterface followTable) {
         String userAlias = request.getTargetUserAlias();
         if(userAlias == null) {
             throw new RuntimeException("[BadRequest] Request needs to have a user alias");
         }
-        int followersCount = getFollowDAO().getFollowersCount(userAlias);
+        int followersCount = followTable.getFollowersCount(userAlias);
         return new FollowersCountResponse(followersCount);
     }
 
-    public IsFollowerResponse isFollower(IsFollowerRequest request) {
+    public IsFollowerResponse isFollower(IsFollowerRequest request, FollowDAOInterface followTable) {
         String follower = request.getFollowerAlias();
         String followee = request.getFolloweeAlias();
         if(follower == null) {
@@ -134,36 +123,36 @@ public class FollowService {
         } else if(followee == null) {
             throw new RuntimeException("[BadRequest] Request needs to have a followee alias");
         }
-        return new IsFollowerResponse(getFollowDAO().isFollowing(follower, followee));
+        return new IsFollowerResponse(followTable.isFollowing(follower, followee));
     }
 
-    public FollowResponse follow(FollowRequest request) {
+    public FollowResponse follow(FollowRequest request, AuthTokenDAOInterface authTable, FollowDAOInterface followTable) {
         String authTokenString = request.getAuthToken().getToken();
-        getAuthTokenDAO().deleteOldEntries();
+        authTable.deleteOldEntries(authTokenString);
         if(request.getFolloweeAlias() == null) {
             throw new RuntimeException("[BadRequest] Request needs to have a followee alias");
-        } else if (!getAuthTokenDAO().validAuthToken(authTokenString)) {
+        } else if (authTable.invalidAuthToken(authTokenString)) {
             throw new RuntimeException("[BadRequest] AuthToken timed out");
         }
         AuthToken authToken = request.getAuthToken();
-        String follower = getAuthTokenDAO().getUserAlias(authToken);
+        String follower = authTable.getUserAlias(authToken);
         String followee = request.getFolloweeAlias();
-        getFollowDAO().addFollow(follower, followee);
+        followTable.addFollow(follower, followee);
         return new FollowResponse();
     }
 
-    public UnfollowResponse unfollow(UnfollowRequest request) {
+    public UnfollowResponse unfollow(UnfollowRequest request, AuthTokenDAOInterface authTable, FollowDAOInterface followTable) {
         String authTokenString = request.getAuthToken().getToken();
-        getAuthTokenDAO().deleteOldEntries();
+        authTable.deleteOldEntries(authTokenString);
         if(request.getFolloweeAlias() == null) {
             throw new RuntimeException("[BadRequest] Request needs to have a followee alias");
-        } else if (!getAuthTokenDAO().validAuthToken(authTokenString)) {
+        } else if (authTable.invalidAuthToken(authTokenString)) {
             throw new RuntimeException("[BadRequest] AuthToken timed out");
         }
         AuthToken authToken = request.getAuthToken();
-        String follower = getAuthTokenDAO().getUserAlias(authToken);
+        String follower = authTable.getUserAlias(authToken);
         String followee = request.getFolloweeAlias();
-        getFollowDAO().deleteFollow(follower, followee);
+        followTable.deleteFollow(follower, followee);
         return new UnfollowResponse();
     }
 
@@ -205,17 +194,5 @@ public class FollowService {
         }
 
         return followersIndex;
-    }
-
-    List<User> getDummyFollowees() {
-        return getFakeData().getFakeUsers();
-    }
-
-    List<User> getDummyFollowers() {
-        return getFakeData().getFakeUsers();
-    }
-
-    FakeData getFakeData() {
-        return new FakeData();
     }
 }

@@ -8,28 +8,10 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 
 import java.util.*;
 
-import edu.byu.cs.tweeter.model.domain.AuthToken;
-import edu.byu.cs.tweeter.model.domain.User;
-import edu.byu.cs.tweeter.model.net.request.FollowRequest;
-import edu.byu.cs.tweeter.model.net.request.FollowersCountRequest;
-import edu.byu.cs.tweeter.model.net.request.FollowersRequest;
-import edu.byu.cs.tweeter.model.net.request.FollowingCountRequest;
-import edu.byu.cs.tweeter.model.net.request.FollowingRequest;
-import edu.byu.cs.tweeter.model.net.request.IsFollowerRequest;
-import edu.byu.cs.tweeter.model.net.request.UnfollowRequest;
-import edu.byu.cs.tweeter.model.net.response.FollowResponse;
-import edu.byu.cs.tweeter.model.net.response.FollowersCountResponse;
-import edu.byu.cs.tweeter.model.net.response.FollowersResponse;
-import edu.byu.cs.tweeter.model.net.response.FollowingCountResponse;
-import edu.byu.cs.tweeter.model.net.response.FollowingResponse;
-import edu.byu.cs.tweeter.model.net.response.IsFollowerResponse;
-import edu.byu.cs.tweeter.model.net.response.UnfollowResponse;
-import edu.byu.cs.tweeter.util.FakeData;
-
 /**
  * A DAO for accessing 'following' data from the database.
  */
-public class FollowDAO {
+public class FollowDAO implements FollowDAOInterface {
 
     private static final String TableName = "follows";
     private static final String IndexName = "followeeAlias-followerAlias-index";
@@ -39,21 +21,12 @@ public class FollowDAO {
     //private static final String VisitCountAttr = "visit_count";
 
     // DynamoDB client
-    private static AmazonDynamoDB amazonDynamoDB = AmazonDynamoDBClientBuilder
+    private static final AmazonDynamoDB amazonDynamoDB = AmazonDynamoDBClientBuilder
             .standard()
             .withRegion("us-east-1")
             .build();
-    private static DynamoDB dynamoDB = new DynamoDB(amazonDynamoDB);
+    private static final DynamoDB dynamoDB = new DynamoDB(amazonDynamoDB);
 
-    private static boolean isNonEmptyString(String value) {
-        return (value != null && value.length() > 0);
-    }
-
-    /**
-     * Create the "visits" table and the "visits-index" global index
-     *
-     * @throws DataAccessException
-     */
     public void createTable() throws DataAccessException {
         try {
             // Attribute definitions
@@ -65,8 +38,6 @@ public class FollowDAO {
             tableAttributeDefinitions.add(new AttributeDefinition()
                     .withAttributeName(FolloweeAttr)
                     .withAttributeType("S"));
-
-            
             
             // Table key schema
             ArrayList<KeySchemaElement> tableKeySchema = new ArrayList<>();
@@ -114,11 +85,6 @@ public class FollowDAO {
         }
     }
 
-    /**
-     * Delete the "visits" table and the "visits-index" global index
-     *
-     * @throws DataAccessException
-     */
     public void deleteTable() throws DataAccessException {
         try {
             Table table = dynamoDB.getTable(TableName);
@@ -133,7 +99,7 @@ public class FollowDAO {
     }
 
     public int getFollowersCount(String followee) {
-        Map<String, String> attrNames = new HashMap<String, String>();
+        Map<String, String> attrNames = new HashMap<>();
         attrNames.put("#vis", FolloweeAttr);
 
         Map<String, AttributeValue> attrValues = new HashMap<>();
@@ -141,16 +107,20 @@ public class FollowDAO {
 
         QueryRequest queryRequest = new QueryRequest()
                 .withTableName(TableName)
+                .withIndexName(IndexName)
                 .withKeyConditionExpression("#vis = :followee")
                 .withExpressionAttributeNames(attrNames)
                 .withExpressionAttributeValues(attrValues);
 
         QueryResult queryResult = amazonDynamoDB.query(queryRequest);
+        if (queryResult.getItems() == null) {
+            return 0;
+        }
         return queryResult.getItems().size();
     }
 
     public int getFollowingCount(String follower) {
-        Map<String, String> attrNames = new HashMap<String, String>();
+        Map<String, String> attrNames = new HashMap<>();
         attrNames.put("#vis", FollowerAttr);
 
         Map<String, AttributeValue> attrValues = new HashMap<>();
@@ -163,6 +133,9 @@ public class FollowDAO {
                 .withExpressionAttributeValues(attrValues);
 
         QueryResult queryResult = amazonDynamoDB.query(queryRequest);
+        if (queryResult.getItems() == null) {
+            return 0;
+        }
         return queryResult.getItems().size();
     }
 
@@ -190,7 +163,7 @@ public class FollowDAO {
     public List<String> getFollowing(String follower) {
         List<String> result = new ArrayList<>();
 
-        Map<String, String> attrNames = new HashMap<String, String>();
+        Map<String, String> attrNames = new HashMap<>();
         attrNames.put("#vis", FollowerAttr);
 
         Map<String, AttributeValue> attrValues = new HashMap<>();
@@ -216,7 +189,7 @@ public class FollowDAO {
     public List<String> getFollowers(String followee) {
         List<String> result = new ArrayList<>();
 
-        Map<String, String> attrNames = new HashMap<String, String>();
+        Map<String, String> attrNames = new HashMap<>();
         attrNames.put("#vis", FolloweeAttr);
 
         Map<String, AttributeValue> attrValues = new HashMap<>();
@@ -224,6 +197,7 @@ public class FollowDAO {
 
         QueryRequest queryRequest = new QueryRequest()
                 .withTableName(TableName)
+                .withIndexName(IndexName)
                 .withKeyConditionExpression("#vis = :followee")
                 .withExpressionAttributeNames(attrNames)
                 .withExpressionAttributeValues(attrValues);

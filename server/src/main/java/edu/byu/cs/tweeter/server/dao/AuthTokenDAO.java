@@ -8,11 +8,8 @@ import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.Projection;
-import com.amazonaws.services.dynamodbv2.model.ProjectionType;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
@@ -25,7 +22,7 @@ import java.util.Map;
 
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 
-public class AuthTokenDAO {
+public class AuthTokenDAO implements AuthTokenDAOInterface {
 
     private static final String TableName = "auth_token";
 
@@ -34,15 +31,11 @@ public class AuthTokenDAO {
     private static final String UserAliasAttr = "userAlias";
 
     // DynamoDB client
-    private static AmazonDynamoDB amazonDynamoDB = AmazonDynamoDBClientBuilder
+    private static final AmazonDynamoDB amazonDynamoDB = AmazonDynamoDBClientBuilder
             .standard()
             .withRegion("us-east-1")
             .build();
-    private static DynamoDB dynamoDB = new DynamoDB(amazonDynamoDB);
-
-    private static boolean isNonEmptyString(String value) {
-        return (value != null && value.length() > 0);
-    }
+    private static final DynamoDB dynamoDB = new DynamoDB(amazonDynamoDB);
 
     public void createTable() throws DataAccessException {
         try {
@@ -52,12 +45,12 @@ public class AuthTokenDAO {
             tableAttributeDefinitions.add(new AttributeDefinition()
                     .withAttributeName(AuthTokenAttr)
                     .withAttributeType("S"));
-            tableAttributeDefinitions.add(new AttributeDefinition()
-                    .withAttributeName(UserAliasAttr)
-                    .withAttributeType("S"));
-            tableAttributeDefinitions.add(new AttributeDefinition()
-                    .withAttributeName(TimeStampAttr)
-                    .withAttributeType("N"));
+//            tableAttributeDefinitions.add(new AttributeDefinition()
+//                    .withAttributeName(UserAliasAttr)
+//                    .withAttributeType("S"));
+//            tableAttributeDefinitions.add(new AttributeDefinition()
+//                    .withAttributeName(TimeStampAttr)
+//                    .withAttributeType("N"));
 
             // Table key schema
             ArrayList<KeySchemaElement> tableKeySchema = new ArrayList<>();
@@ -94,7 +87,7 @@ public class AuthTokenDAO {
         }
     }
 
-    public void addAuthToken(String authToken, String userAlias, long timeStamp) {
+    public void addItem(String authToken, String userAlias, long timeStamp) {
         Table table = dynamoDB.getTable(TableName);
 
         Item item = new Item()
@@ -105,31 +98,13 @@ public class AuthTokenDAO {
         table.putItem(item);
     }
 
-    public void deleteAuthToken(String authToken) {
+    public void deleteItem(String authToken) {
         Table table = dynamoDB.getTable(TableName);
         table.deleteItem(AuthTokenAttr, authToken);
     }
 
-    public void deleteOldEntries() {
-        Table table = dynamoDB.getTable(TableName);
-
-        QueryRequest queryRequest = new QueryRequest()
-                .withTableName(TableName);
-        QueryResult queryResult = amazonDynamoDB.query(queryRequest);
-        List<Map<String, AttributeValue>> items = queryResult.getItems();
-        if (items != null) {
-            for (Map<String, AttributeValue> item : items){
-                String timestampString = item.get(TimeStampAttr).getN();
-                long timestamp = Long.parseLong(timestampString);
-                if (timestamp < (Instant.now().getEpochSecond() - 600)) {
-                    deleteAuthToken(item.get(AuthTokenAttr).getS());
-                }
-            }
-        }
-    }
-
-    public boolean validAuthToken(String authToken) {
-        Map<String, String> attrNames = new HashMap<String, String>();
+    public void deleteOldEntries(String authToken) {
+        Map<String, String> attrNames = new HashMap<>();
         attrNames.put("#loc", AuthTokenAttr);
 
         Map<String, AttributeValue> attrValues = new HashMap<>();
@@ -144,14 +119,51 @@ public class AuthTokenDAO {
         QueryResult queryResult = amazonDynamoDB.query(queryRequest);
         List<Map<String, AttributeValue>> items = queryResult.getItems();
         if (items != null) {
-            return true;
+            for (Map<String, AttributeValue> item : items){
+                String timestampString = item.get(TimeStampAttr).getN();
+                long timestamp = Long.parseLong(timestampString);
+                if (timestamp < (Instant.now().getEpochSecond() - 600)) {
+                    deleteItem(item.get(AuthTokenAttr).getS());
+                }
+            }
         }
-        return false;
+    }
+
+    public boolean invalidAuthToken(String authToken) {
+        Map<String, String> attrNames = new HashMap<>();
+        attrNames.put("#loc", AuthTokenAttr);
+
+        Map<String, AttributeValue> attrValues = new HashMap<>();
+        attrValues.put(":token", new AttributeValue().withS(authToken));
+
+        QueryRequest queryRequest = new QueryRequest()
+                .withTableName(TableName)
+                .withKeyConditionExpression("#loc = :token")
+                .withExpressionAttributeNames(attrNames)
+                .withExpressionAttributeValues(attrValues);
+
+        QueryResult queryResult = amazonDynamoDB.query(queryRequest);
+        List<Map<String, AttributeValue>> items = queryResult.getItems();
+        return (items == null);
     }
 
     public String getUserAlias(AuthToken authToken) {
-        Table table = dynamoDB.getTable(TableName);
-        Item item = table.getItem(AuthTokenAttr, authToken.getToken());
-        return item.getString(UserAliasAttr);
+
+        Map<String, String> attrNames = new HashMap<>();
+        attrNames.put("#vis", AuthTokenAttr);
+
+        Map<String, AttributeValue> attrValues = new HashMap<>();
+        attrValues.put(":receiver", new AttributeValue().withS(authToken.getToken()));
+
+        QueryRequest queryRequest = new QueryRequest()
+                .withTableName(TableName)
+                .withKeyConditionExpression("#vis = :receiver")
+                .withExpressionAttributeNames(attrNames)
+                .withExpressionAttributeValues(attrValues);
+
+        QueryResult queryResult = amazonDynamoDB.query(queryRequest);
+        List<Map<String, AttributeValue>> items = queryResult.getItems();
+
+        return items.get(0).get(UserAliasAttr).getS();
     }
 }

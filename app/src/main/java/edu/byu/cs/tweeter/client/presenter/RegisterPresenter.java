@@ -63,7 +63,6 @@ public class RegisterPresenter extends Presenter<RegisterView> {
         if (password.length() == 0) {
             throw new IllegalArgumentException("Password cannot be empty.");
         }
-
         if (image == null) {
             throw new IllegalArgumentException("Profile image must be uploaded.");
         }

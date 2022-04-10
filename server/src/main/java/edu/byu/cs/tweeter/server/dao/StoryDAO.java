@@ -19,13 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import edu.byu.cs.tweeter.model.domain.Status;
-import edu.byu.cs.tweeter.model.domain.User;
-import edu.byu.cs.tweeter.model.net.request.StoryRequest;
-import edu.byu.cs.tweeter.model.net.response.StoryResponse;
-import edu.byu.cs.tweeter.util.FakeData;
-
-public class StoryDAO {
+public class StoryDAO implements StoryDAOInterface {
 
     private static final String TableName = "story";
 
@@ -35,15 +29,11 @@ public class StoryDAO {
 
 
     // DynamoDB client
-    private static AmazonDynamoDB amazonDynamoDB = AmazonDynamoDBClientBuilder
+    private static final AmazonDynamoDB amazonDynamoDB = AmazonDynamoDBClientBuilder
             .standard()
             .withRegion("us-east-1")
             .build();
-    private static DynamoDB dynamoDB = new DynamoDB(amazonDynamoDB);
-
-    private static boolean isNonEmptyString(String value) {
-        return (value != null && value.length() > 0);
-    }
+    private static final DynamoDB dynamoDB = new DynamoDB(amazonDynamoDB);
 
     public void createTable() throws DataAccessException {
         try {
@@ -53,9 +43,9 @@ public class StoryDAO {
             tableAttributeDefinitions.add(new AttributeDefinition()
                     .withAttributeName(PosterAliasAttr)
                     .withAttributeType("S"));
-            tableAttributeDefinitions.add(new AttributeDefinition()
-                    .withAttributeName(PostTextAttr)
-                    .withAttributeType("S"));
+//            tableAttributeDefinitions.add(new AttributeDefinition()
+//                    .withAttributeName(PostTextAttr)
+//                    .withAttributeType("S"));
             tableAttributeDefinitions.add(new AttributeDefinition()
                     .withAttributeName(TimeStampAttr)
                     .withAttributeType("N"));
@@ -111,7 +101,7 @@ public class StoryDAO {
 
     public List<Map<String, AttributeValue>> getStory(String userAlias) {
 
-        Map<String, String> attrNames = new HashMap<String, String>();
+        Map<String, String> attrNames = new HashMap<>();
         attrNames.put("#vis", PosterAliasAttr);
 
         Map<String, AttributeValue> attrValues = new HashMap<>();

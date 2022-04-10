@@ -7,6 +7,7 @@ import edu.byu.cs.tweeter.model.net.request.LoginRequest;
 import edu.byu.cs.tweeter.model.net.request.LogoutRequest;
 import edu.byu.cs.tweeter.model.net.response.LoginResponse;
 import edu.byu.cs.tweeter.model.net.response.LogoutResponse;
+import edu.byu.cs.tweeter.server.dao.AuthTokenDAO;
 import edu.byu.cs.tweeter.server.service.UserService;
 
 /**
@@ -17,6 +18,6 @@ public class LogoutHandler implements RequestHandler<LogoutRequest, LogoutRespon
     @Override
     public LogoutResponse handleRequest(LogoutRequest request, Context context) {
         UserService userService = new UserService();
-        return userService.logout(request);
+        return userService.logout(request, new AuthTokenDAO());
     }
 }

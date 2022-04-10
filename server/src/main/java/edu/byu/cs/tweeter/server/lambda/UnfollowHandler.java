@@ -5,6 +5,8 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 
 import edu.byu.cs.tweeter.model.net.request.UnfollowRequest;
 import edu.byu.cs.tweeter.model.net.response.UnfollowResponse;
+import edu.byu.cs.tweeter.server.dao.AuthTokenDAO;
+import edu.byu.cs.tweeter.server.dao.FollowDAO;
 import edu.byu.cs.tweeter.server.service.FollowService;
 
 /**
@@ -24,6 +26,6 @@ public class UnfollowHandler implements RequestHandler<UnfollowRequest, Unfollow
     @Override
     public UnfollowResponse handleRequest(UnfollowRequest request, Context context) {
         FollowService service = new FollowService();
-        return service.unfollow(request);
+        return service.unfollow(request, new AuthTokenDAO(), new FollowDAO());
     }
 }
